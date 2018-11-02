@@ -7,14 +7,14 @@ class Deck
   attr_reader :deck
 
   def initialize
-    @deck = new_deck
+    @deck = create_cards
   end
 
   def create_cards_by(suit_mark)
     CARD_VALUES.map { |value, points| value + suit_mark }
   end
 
-  def new_deck
+  def create_cards
     deck = []
     CARD_SUITS.each do |name, mark|
       deck += create_cards_by(mark)
@@ -22,9 +22,13 @@ class Deck
     deck
   end
 
-  def random_card
-    card_number = rand(deck.size)
-    deck[card_number]
+  def random_card(count)
+    hand_out = []
+    loop do 
+      card_number = rand(deck.size)
+      hand_out << deck[card_number]
+      break(hand_out) if hand_out.size == count
+    end
   end
 
   def card_value(card)
