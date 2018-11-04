@@ -9,6 +9,22 @@ class Deck
     @deck = create_cards
   end
 
+  def card_value(card)
+    CARD_VALUES[card.chop]
+  end
+
+  def random_card(count)
+    raise 'Deck is clear. Not enouht cards' if @deck.empty?
+
+    cards = []
+    count.times do
+      card = deck[rand(deck.size)]
+      cards << card
+      reject_card(card)
+    end
+    cards
+  end
+
   def create_cards_by(suit_mark)
     CARD_VALUES.map { |value, _points| value + suit_mark }
   end
@@ -19,21 +35,6 @@ class Deck
       deck += create_cards_by(mark)
     end
     deck
-  end
-
-  def random_card(count)
-    raise "Deck is clear. Not enouht cards" if @deck.empty?
-    cards = []
-    count.times do
-      card = deck[rand(deck.size)]
-      cards << card
-      reject_card(card)
-    end
-    cards
-  end
-
-  def card_value(card)
-    CARD_VALUES[card.chop]
   end
 
   def reject_card(card)

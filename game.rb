@@ -1,7 +1,6 @@
 class Game
-
   A_BET = 10
-  CARDS_COUNT_ON_START =  2
+  CARDS_COUNT_ON_START = 2
   MAX_CARDS_COUNT = 3
   DEALER_SCORE_SETTING = 17
   SCORE_FOR_WIN = 21
@@ -16,15 +15,19 @@ class Game
   end
 
   def menu
-    #loop do
+    loop do
       @interface.main_menu
       input = choice
-      abort if input.zero?
+      return if input.zero?
+
       menu_cases(input)
-    #end
+    end
+  rescue StandardError => e
+    @interface.show_error(e)
+    retry
   end
 
-  #private
+  private
 
   def choice
     @interface.ask_choice
@@ -32,21 +35,29 @@ class Game
 
   def menu_cases(input)
     case input
-    when 0
-      abort
     when 1
       start_the_game
+    when 2
+      show_score_raitings
     else
-      @interface.incorrect_choice
+      raise @interface.incorrect_choice
     end
   end
 
   def start_the_game
     player = User.new(@interface.ask_player_name)
     dealer = Dealer.new
-    @users += [player, dealer]
+    @users = [player, dealer]
     create_users_account_in_bank
     start_a_round
+  end
+
+  def show_score_raitings
+    return @interface.empty_list if @score_raitings.empty?
+
+    score_table = @score_raitings.sort_by { |user| -user.balance }
+    @interface.score_raitings
+    score_table.each { |user| @interface.score_raitings_table(user, score_table) }
   end
 
   def start_a_round
@@ -60,12 +71,11 @@ class Game
     @interface.getting_on_a_cards
     show_game_status
     ask_player_for_actions
-    if next_round? && !(@users.first.balance.zero? && @users.last.balance.zero?)
-      reset_users_attribute
-      start_a_round
-    else
-      @interface.game_over
-    end
+    ask_next_round
+  rescue RuntimeError => e
+    @interface.show_error(e)
+    puts "shit"
+    retry
   end
 
   def do_action_with_users(block)
@@ -92,8 +102,8 @@ class Game
     do_action_with_users ->(user) { @bank.create_account(user) }
   end
 
-  def give_users_cards 
-    do_action_with_users ->(user) { give_a_cards(user, count = CARDS_COUNT_ON_START) }
+  def give_users_cards
+    do_action_with_users ->(user) { give_a_cards(user, CARDS_COUNT_ON_START) }
   end
 
   def reset_users_attribute
@@ -106,22 +116,22 @@ class Game
 
     cards = @deck.random_card(count)
 
-    raise "So much cards are trying to give user" if cards.size > MAX_CARDS_COUNT - cards_in_hand
+    raise 'So much cards are trying to give user' if cards.size > MAX_CARDS_COUNT - cards_in_hand
 
     user.take_in_hand(cards)
-    cards.each { |card| @deck.reject_card(card) }    
+    cards.each { |card| @deck.reject_card(card) }
   end
 
   def cards_score_in_hand(user)
     cards_score = 0
     user.cards_in_hand.each do |card|
-      if card.chop == "A" && cards_score > 10
-        card_value = @deck.card_value(card)[1]
-      elsif card.chop == "A"
-        card_value = @deck.card_value(card)[0]
-      else
-        card_value = @deck.card_value(card)
-      end
+      card_value = if card.chop == 'A' && cards_score > 10
+                     @deck.card_value(card)[1]
+                   elsif card.chop == 'A'
+                     @deck.card_value(card)[0]
+                   else
+                     @deck.card_value(card)
+                   end
       cards_score += card_value
     end
     cards_score
@@ -140,11 +150,11 @@ class Game
     when 2
       skip_an_action(player)
       @interface.dealer_actions
-      dealer_actions  
+      dealer_actions
     when 3
       show_all_cards
     else
-      @interface.incorrect_choice
+      raise @interface.incorrect_choice
     end
   end
 
@@ -152,18 +162,18 @@ class Game
     @interface.player_actions_menu
     input = choice
     player_actions_menu(input)
-
-    rescue RuntimeError => e
-      puts e.inspect
-      retry
+  rescue RuntimeError => e
+    @interface.show_error(e)
+    retry
   end
 
   def give_one_more_card(user)
-    give_a_cards(user, count = 1)
+    give_a_cards(user, 1)
   end
 
   def skip_an_action(user)
     raise "#{user.name} already skiped action" unless user.skip_count.zero?
+
     user.up_skip_count
   end
 
@@ -184,7 +194,7 @@ class Game
   def auto_show_card?
     player = @users.first
     dealer = @users.last
-    dealer.cards_in_hand.size == MAX_CARDS_COUNT && player.cards_in_hand.size == MAX_CARDS_COUNT     
+    dealer.cards_in_hand.size == MAX_CARDS_COUNT && player.cards_in_hand.size == MAX_CARDS_COUNT
   end
 
   def next_step_player
@@ -193,7 +203,7 @@ class Game
     else
       show_game_status
       ask_player_for_actions
-    end    
+    end
   end
 
   def next_step_dealer
@@ -228,14 +238,14 @@ class Game
     dealer = @users.last
     @interface.round_end_screen
     winner = nil
-    if player.score <= SCORE_FOR_WIN && (dealer.score > SCORE_FOR_WIN || player.score > dealer.score)
+    if player_is_winner?(player, dealer)
       winner = player
-    elsif dealer.score <= SCORE_FOR_WIN && (player.score > SCORE_FOR_WIN || dealer.score > player.score)
+    elsif dealer_is_winner?(player, dealer)
       winner = dealer
-    elsif player.score == dealer.score || (player.score > SCORE_FOR_WIN && dealer.score > SCORE_FOR_WIN)
-      do_action_with_users ->(user) do
+    elsif draw?(player, dealer)
+      do_action_with_users(lambda do |user|
         @bank.unreserve_money(user, @bank.all_transactions_by(user).last.values[0].abs)
-      end
+      end)
       @interface.declare_the_dead_heat
       show_users_balance
     end
@@ -244,6 +254,18 @@ class Game
       @interface.declare_the_victory_by(winner)
       show_users_balance
     end
+  end
+
+  def player_is_winner?(player, dealer)
+    player.score <= SCORE_FOR_WIN && (dealer.score > SCORE_FOR_WIN || player.score > dealer.score)
+  end
+
+  def dealer_is_winner?(player, dealer)
+    dealer.score <= SCORE_FOR_WIN && (player.score > SCORE_FOR_WIN || dealer.score > player.score)
+  end
+
+  def draw?(player, dealer)
+    player.score == dealer.score || (player.score > SCORE_FOR_WIN && dealer.score > SCORE_FOR_WIN)
   end
 
   def next_round?
@@ -257,8 +279,23 @@ class Game
     else
       raise @interface.incorrect_choice
     end
-    rescue
-      retry
+  rescue StandardError => e
+    @interface.show_error(e)
+    retry
   end
 
+  def users_balance_zero?
+    @users.first.balance.zero? || @users.last.balance.zero?
+  end
+
+  def ask_next_round
+    player = @users.first
+    reset_users_attribute
+    if next_round? && !users_balance_zero?
+      raise @interface.starting_new_round
+    else
+      @score_raitings << player
+      @interface.game_over
+    end
+  end
 end

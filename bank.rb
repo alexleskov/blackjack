@@ -21,7 +21,9 @@ class Bank
     raise 'Value must be more then 0' if value <= 0
 
     money_count = accounts[owner]
-    raise "Owner has no so much money, only #{money_count}$" if money_count.zero? || money_count < value
+    if money_count.zero? || money_count < value
+      raise "Owner has no so much money, only #{money_count}$"
+    end
 
     accounts[owner] -= value
     @transactions_list << { owner => -value }

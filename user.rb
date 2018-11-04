@@ -1,4 +1,8 @@
+require_relative 'validation.rb'
+
 class User
+  include Validation
+
   class << self
     attr_reader :all
   end
@@ -11,8 +15,12 @@ class User
 
   attr_reader :name, :balance, :cards_in_hand, :score, :skip_count
 
+  validate :name, :presence
+  validate :name, :type, String
+
   def initialize(name)
     @name = name
+    validate!
     @balance = 0
     @cards_in_hand = []
     @score = 0

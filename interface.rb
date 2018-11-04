@@ -3,8 +3,9 @@ class Interface
     puts "\n----------------------------------------------"
     puts "\u2663 \u2666 \u2665 \u2660  WELCOME TO \"BlackJack\" GAME! \u2663 \u2666 \u2665 \u2660"
     puts '----------------------------------------------'
-    puts "          |Press '1' - Start a game|          "
-    puts "          |Press '0' - Exit        |          "
+    puts "        | Press '1' - Start a game   |        "
+    puts "        | Press '2' - Score raitings |        "
+    puts "        | Press '0' - Exit           |        "
     puts '----------------------------------------------'
   end
 
@@ -87,22 +88,22 @@ class Interface
   end
 
   def dealer_skiped_action
-    puts "\nDealer skiped action"
+    puts "\n*Dealer skiped action"
     puts 'Now is YOUR turn'
   end
 
   def player_skiped_action
-    puts "\nYou skiped action"
+    puts "\n*You skiped action"
     puts 'Now is DEALER turn'
   end
 
   def dealer_taked_card
-    puts "\nDealer taked one more card"
+    puts "\n*Dealer taked one more card"
     puts 'Now is YOUR turn'
   end
 
   def player_taked_card
-    puts "\nYou taked one more card"
+    puts "\n*You taked one more card"
     puts 'Now is DEALER turn'
   end
 
@@ -136,7 +137,30 @@ class Interface
     puts "\n1 - NEXT ROUND\n2 - GAME OVER"
   end
 
+  def starting_new_round
+    puts "\n[A new round is starting]\n"
+  end
+
   def game_over
     puts "\n\n\u2663 \u2666 \u2665 \u2660  THE GAME IS OVER \u2663 \u2666 \u2665 \u2660"
+  end
+
+  def score_raitings
+    puts "\n\n\u2663 \u2666 \u2665 \u2660  SCORE RAITINGS \u2663 \u2666 \u2665 \u2660"
+    puts "----------------------------------\n"
+  end
+
+  def score_raitings_table(user, score_array)
+    puts " #{score_array.index(user) + 1} | #{user.name.upcase} : #{user.balance}$"
+  end
+
+  def empty_list
+    puts "\n##################################\n"
+    puts '         THE LIST IS EMPTY'
+    puts "##################################\n"
+  end
+
+  def show_error(error)
+    puts error.inspect
   end
 end
