@@ -110,15 +110,13 @@ class Game
   end
 
   def give_a_cards(user, count)
-    cards_in_hand = user.cards_in_hand.size
-    raise "User already have got #{MAX_CARDS_COUNT} cards" if cards_in_hand > MAX_CARDS_COUNT
+    raise "User already have got #{MAX_CARDS_COUNT} cards" if user.cards_in_hand.size > MAX_CARDS_COUNT
 
     cards = @deck.random_card(count)
 
-    raise 'So much cards are trying to give user' if cards.size > MAX_CARDS_COUNT - cards_in_hand
+    raise 'So much cards are trying to give user' if cards.size > MAX_CARDS_COUNT - user.cards_in_hand.size
 
     user.take_in_hand(cards)
-    cards.each { |card| @deck.reject_card(card) }
   end
 
   def cards_score_in_hand(user)

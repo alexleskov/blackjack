@@ -3,10 +3,10 @@ class Deck
   CARD_VALUES = { '2' => 2, '3' => 3, '4' => 4, '5' => 5, '6' => 6, '7' => 7, '8' => 8, '9' => 9,
                   '10' => 10, 'J' => 10, 'Q' => 10, 'K' => 10, 'A' => [11, 1] }.freeze
 
-  attr_reader :deck
+  attr_reader :cards
 
   def initialize
-    @deck = create_cards
+    @cards = create_cards
   end
 
   def card_value(card)
@@ -14,15 +14,15 @@ class Deck
   end
 
   def random_card(count)
-    raise 'Deck is clear. Not enouht cards' if @deck.empty?
+    raise 'Deck is clear. Not enouht cards' if @cards.empty?
 
-    cards = []
+    random_cards = []
     count.times do
-      card = deck[rand(deck.size)]
-      cards << card
+      card = cards[rand(cards.size)]
+      random_cards << card
       reject_card(card)
     end
-    cards
+    random_cards
   end
 
   def create_cards_by(suit_mark)
@@ -30,14 +30,14 @@ class Deck
   end
 
   def create_cards
-    deck = []
+    cards = []
     CARD_SUITS.each do |_name, mark|
-      deck += create_cards_by(mark)
+      cards += create_cards_by(mark)
     end
-    deck
+    cards
   end
 
   def reject_card(card)
-    deck.delete(card)
+    cards.delete(card)
   end
 end
