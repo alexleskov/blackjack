@@ -24,7 +24,7 @@ class Interface
   end
 
   def incorrect_choice
-    puts "\n[Menu variant like that doesn't exist]\n"
+    "\n[Menu variant like that doesn't exist]\n"
   end
 
   def ask_player_name

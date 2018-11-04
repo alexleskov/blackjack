@@ -74,7 +74,6 @@ class Game
     ask_next_round
   rescue RuntimeError => e
     @interface.show_error(e)
-    puts "shit"
     retry
   end
 
@@ -279,7 +278,7 @@ class Game
     else
       raise @interface.incorrect_choice
     end
-  rescue StandardError => e
+  rescue RuntimeError => e
     @interface.show_error(e)
     retry
   end
@@ -292,7 +291,8 @@ class Game
     player = @users.first
     reset_users_attribute
     if next_round? && !users_balance_zero?
-      raise @interface.starting_new_round
+      @interface.starting_new_round
+      start_a_round
     else
       @score_raitings << player
       @interface.game_over
