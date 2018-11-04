@@ -13,7 +13,6 @@ class Game
     @score_raitings = []
     @interface = Interface.new
     @bank = Bank.new
-    @deck = Deck.new
   end
 
   def menu
@@ -25,7 +24,7 @@ class Game
     #end
   end
 
-  private
+  #private
 
   def choice
     @interface.ask_choice
@@ -46,15 +45,27 @@ class Game
     player = User.new(@interface.ask_player_name)
     dealer = Dealer.new
     @users += [player, dealer]
+    create_users_account_in_bank
+    start_a_round
+  end
+
+  def start_a_round
     @interface.start_screen
-    create_users_game_attribute
+    @deck = Deck.new
+    give_users_cards
     show_users_balance
     @interface.taking_a_bet
     take_a_bet_from_users
     show_users_balance
     @interface.getting_on_a_cards
     show_game_status
-    ask_player_for_actions   
+    ask_player_for_actions
+    if next_round? && !(@users.first.balance.zero? && @users.last.balance.zero?)
+      reset_users_attribute
+      start_a_round
+    else
+      @interface.game_over
+    end
   end
 
   def do_action_with_users(block)
@@ -77,11 +88,16 @@ class Game
     do_action_with_users ->(user) { user.change_score(cards_score_in_hand(user)) }
   end
 
-  def create_users_game_attribute 
-    do_action_with_users ->(user) do
-      @bank.create_account(user)
-      give_a_cards(user, count = CARDS_COUNT_ON_START)
-    end
+  def create_users_account_in_bank
+    do_action_with_users ->(user) { @bank.create_account(user) }
+  end
+
+  def give_users_cards 
+    do_action_with_users ->(user) { give_a_cards(user, count = CARDS_COUNT_ON_START) }
+  end
+
+  def reset_users_attribute
+    do_action_with_users ->(user) { user.reset_attributes }
   end
 
   def give_a_cards(user, count)
@@ -120,12 +136,11 @@ class Game
       player.change_score(cards_score_in_hand(player))
       @interface.devider(:light)
       @interface.show_user_score_by_cards(player)
-      @interface.dealer_actions
-      dealer_actions      
+      next_step_dealer
     when 2
       skip_an_action(player)
       @interface.dealer_actions
-      dealer_actions
+      dealer_actions  
     when 3
       show_all_cards
     else
@@ -150,7 +165,6 @@ class Game
   def skip_an_action(user)
     raise "#{user.name} already skiped action" unless user.skip_count.zero?
     user.up_skip_count
-    @interface.player_skiped_action
   end
 
   def show_all_cards
@@ -167,11 +181,27 @@ class Game
     @interface.show_user_score_by_cards(@users.first)
   end
 
-  def auto_show_cards
-    dealer = @users.last
+  def auto_show_card?
     player = @users.first
-    if dealer.cards_in_hand.size == MAX_CARDS_COUNT && player.cards_in_hand.size == MAX_CARDS_COUNT
+    dealer = @users.last
+    dealer.cards_in_hand.size == MAX_CARDS_COUNT && player.cards_in_hand.size == MAX_CARDS_COUNT     
+  end
+
+  def next_step_player
+    if auto_show_card?
       show_all_cards
+    else
+      show_game_status
+      ask_player_for_actions
+    end    
+  end
+
+  def next_step_dealer
+    if auto_show_card?
+      show_all_cards
+    else
+      @interface.dealer_actions
+      dealer_actions
     end
   end
 
@@ -187,8 +217,7 @@ class Game
       give_one_more_card(dealer)
       dealer.change_score(cards_score_in_hand(dealer))
       @interface.dealer_taked_card
-      show_game_status
-      ask_player_for_actions
+      next_step_player
     else
       show_all_cards
     end
@@ -197,13 +226,13 @@ class Game
   def define_the_winner
     player = @users.first
     dealer = @users.last
-    @interface.end_screen
+    @interface.round_end_screen
     winner = nil
-    if player.score > dealer.score || (player.score <= SCORE_FOR_WIN && dealer.score > SCORE_FOR_WIN)
+    if player.score <= SCORE_FOR_WIN && (dealer.score > SCORE_FOR_WIN || player.score > dealer.score)
       winner = player
-    elsif dealer.score > player.score || (dealer.score <= SCORE_FOR_WIN && player.score > SCORE_FOR_WIN)
+    elsif dealer.score <= SCORE_FOR_WIN && (player.score > SCORE_FOR_WIN || dealer.score > player.score)
       winner = dealer
-    elsif player.score == dealer.score || (player.score >= SCORE_FOR_WIN && dealer.score >= SCORE_FOR_WIN)
+    elsif player.score == dealer.score || (player.score > SCORE_FOR_WIN && dealer.score > SCORE_FOR_WIN)
       do_action_with_users ->(user) do
         @bank.unreserve_money(user, @bank.all_transactions_by(user).last.values[0].abs)
       end
@@ -215,6 +244,21 @@ class Game
       @interface.declare_the_victory_by(winner)
       show_users_balance
     end
+  end
+
+  def next_round?
+    @interface.ask_next_round
+    input = choice
+    case input
+    when 1
+      true
+    when 2
+      false
+    else
+      raise @interface.incorrect_choice
+    end
+    rescue
+      retry
   end
 
 end
