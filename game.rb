@@ -33,6 +33,14 @@ class Game
     @interface.ask_choice
   end
 
+  def player
+    @users.first
+  end
+
+  def dealer
+    @users.last
+  end
+
   def menu_cases(input)
     case input
     when 1
@@ -110,11 +118,15 @@ class Game
   end
 
   def give_a_cards(user, count)
-    raise "User already have got #{MAX_CARDS_COUNT} cards" if user.cards_in_hand.size > MAX_CARDS_COUNT
+    if user.cards_in_hand.size > MAX_CARDS_COUNT
+      raise "User already have got #{MAX_CARDS_COUNT} cards"
+    end
 
     cards = @deck.random_card(count)
 
-    raise 'So much cards are trying to give user' if cards.size > MAX_CARDS_COUNT - user.cards_in_hand.size
+    if cards.size > MAX_CARDS_COUNT - user.cards_in_hand.size
+      raise 'So much cards are trying to give user'
+    end
 
     user.take_in_hand(cards)
   end
@@ -135,7 +147,6 @@ class Game
   end
 
   def player_actions_menu(input)
-    player = @users.first
     case input
     when 1
       give_one_more_card(player)
@@ -189,8 +200,6 @@ class Game
   end
 
   def auto_show_card?
-    player = @users.first
-    dealer = @users.last
     dealer.cards_in_hand.size == MAX_CARDS_COUNT && player.cards_in_hand.size == MAX_CARDS_COUNT
   end
 
@@ -213,7 +222,6 @@ class Game
   end
 
   def dealer_actions
-    dealer = @users.last
     dealer_score = dealer.score
     if dealer_score >= DEALER_SCORE_SETTING && dealer.skip_count.zero?
       skip_an_action(dealer)
@@ -231,8 +239,6 @@ class Game
   end
 
   def define_the_winner
-    player = @users.first
-    dealer = @users.last
     @interface.round_end_screen
     winner = nil
     if player_is_winner?(player, dealer)
@@ -286,7 +292,6 @@ class Game
   end
 
   def ask_next_round
-    player = @users.first
     reset_users_attribute
     if next_round? && !users_balance_zero?
       @interface.starting_new_round

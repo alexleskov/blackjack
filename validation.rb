@@ -44,7 +44,7 @@ module Validation
     def validate!
       object = self
 
-      raise "ValidationError: Validation rules not exist on #{object}}" if object.class.validations.nil?
+      raise "ValidationError: Rules not exist on #{object}}" if object.class.validations.nil?
 
       object.class.validations.each do |attributes|
         validate_method = 'validate_' + attributes[:type].to_s
