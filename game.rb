@@ -1,8 +1,6 @@
 class Game
   A_BET = 10
   CARDS_COUNT_ON_START = 2
-  MAX_CARDS_COUNT = 3
-  DEALER_SCORE_SETTING = 17
   SCORE_FOR_WIN = 21
 
   attr_reader :users, :bank
@@ -247,7 +245,7 @@ class Game
       winner = dealer
     elsif draw?(player, dealer)
       do_action_with_users(lambda do |user|
-        @bank.unreserve_money(user, @bank.all_transactions_by(user).last.values[0].abs)
+        @bank.unreserve_money(user, @bank.transactions(user).last.abs)
       end)
       @interface.declare_the_dead_heat
       show_users_balance

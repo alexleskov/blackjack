@@ -3,17 +3,10 @@ require_relative 'validation.rb'
 class User
   include Validation
 
-  class << self
-    attr_reader :all
-  end
+  MAX_CARDS_COUNT = 3
 
-  @all = {}
-
-  def self.find(user_name)
-    all[user_name]
-  end
-
-  attr_reader :name, :balance, :cards_in_hand, :score, :skip_count
+  attr_reader :name, :hand, :score, :skip_count
+  alias_method :show_cards, :hand
 
   validate :name, :presence
   validate :name, :type, String
@@ -21,17 +14,10 @@ class User
   def initialize(name)
     @name = name
     validate!
-    @balance = 0
-    @cards_in_hand = []
+    @hand = []
     @score = 0
     @skip_count = 0
     self.class.all[name] = self
-  end
-
-  def change_balance(value)
-    raise 'Value less or equial zero' if value < 0
-
-    @balance = value
   end
 
   def change_score(value)
@@ -40,19 +26,23 @@ class User
     @score = value
   end
 
-  def up_skip_count
+  def skip_an_action
+    return false unless skip_count.zero?
+
     @skip_count += 1
   end
 
-  def take_in_hand(card)
-    raise 'Card\\Cards Must be Array class' unless card.is_a?(Array)
+  def take_a_cards(deck, count)
+    cards = deck.random_card(count)
+    #изменить способ перемешивания
+    return false if hand.size > MAX_CARDS_COUNT || cards.size > MAX_CARDS_COUNT - hand.size
 
-    @cards_in_hand += card
+    @hand += cards
   end
 
   def reset_attributes
     @skip_count = 0
     @score = 0
-    @cards_in_hand = []
+    @hand = []
   end
 end
