@@ -17,7 +17,6 @@ class User
     @hand = []
     @score = 0
     @skip_count = 0
-    self.class.all[name] = self
   end
 
   def change_score(value)
@@ -33,8 +32,8 @@ class User
   end
 
   def take_a_cards(deck, count)
-    cards = deck.random_card(count)
-    #изменить способ перемешивания
+    cards = deck.give_cards(count)
+
     return false if hand.size > MAX_CARDS_COUNT || cards.size > MAX_CARDS_COUNT - hand.size
 
     @hand += cards

@@ -25,7 +25,7 @@ class Game
     retry
   end
 
-  private
+  #private
 
   def choice
     @interface.ask_choice
@@ -116,13 +116,13 @@ class Game
   end
 
   def give_a_cards(user, count)
-    if user.cards_in_hand.size > MAX_CARDS_COUNT
+    if user.hand.size > MAX_CARDS_COUNT
       raise "User already have got #{MAX_CARDS_COUNT} cards"
     end
 
     cards = @deck.random_card(count)
 
-    if cards.size > MAX_CARDS_COUNT - user.cards_in_hand.size
+    if cards.size > MAX_CARDS_COUNT - user.hand.size
       raise 'So much cards are trying to give user'
     end
 
@@ -131,7 +131,7 @@ class Game
 
   def cards_score_in_hand(user)
     cards_score = 0
-    user.cards_in_hand.each do |card|
+    user.hand.each do |card|
       card_value = if card.chop == 'A' && cards_score > 10
                      @deck.card_value(card)[1]
                    elsif card.chop == 'A'
@@ -198,7 +198,7 @@ class Game
   end
 
   def auto_show_card?
-    dealer.cards_in_hand.size == MAX_CARDS_COUNT && player.cards_in_hand.size == MAX_CARDS_COUNT
+    dealer.hand.size == MAX_CARDS_COUNT && player.hand.size == MAX_CARDS_COUNT
   end
 
   def next_step_player
@@ -226,7 +226,7 @@ class Game
       @interface.dealer_skiped_action
       show_game_status
       ask_player_for_actions
-    elsif dealer_score < DEALER_SCORE_SETTING && dealer.cards_in_hand.size != MAX_CARDS_COUNT
+    elsif dealer_score < DEALER_SCORE_SETTING && dealer.hand.size != MAX_CARDS_COUNT
       give_one_more_card(dealer)
       dealer.change_score(cards_score_in_hand(dealer))
       @interface.dealer_taked_card

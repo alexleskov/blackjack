@@ -1,43 +1,49 @@
 class Deck
-  CARD_SUITS = { clubs: "\u2663", diamonds: "\u2666", hearts: "\u2665", spades: "\u2660" }.freeze
-  CARD_VALUES = { '2' => 2, '3' => 3, '4' => 4, '5' => 5, '6' => 6, '7' => 7, '8' => 8, '9' => 9,
-                  '10' => 10, 'J' => 10, 'Q' => 10, 'K' => 10, 'A' => [11, 1] }.freeze
 
   attr_reader :cards
 
   def initialize
-    @cards = create_cards
+    @cards = initialize_cards
   end
 
-  def card_value(card)
-    CARD_VALUES[card.chop]
-  end
-
-  def random_card(count)
-    raise 'Deck is clear. Not enouht cards' if @cards.empty?
-
-    random_cards = []
-    count.times do
-      card = cards[rand(cards.size)]
-      random_cards << card
-      reject_card(card)
-    end
-    random_cards
-  end
-
-  def create_cards_by(suit_mark)
-    CARD_VALUES.map { |value, _points| value + suit_mark }
-  end
-
-  def create_cards
+  def initialize_cards
     cards = []
-    CARD_SUITS.each do |_name, mark|
-      cards += create_cards_by(mark)
+    Card.suits.each do |suit_name, mark|
+      Card.face_values.each do |face_value, value|
+        cards << Card.new(suit_name, face_value)
+      end
     end
-    cards
+    cards.shuffle!
   end
 
-  def reject_card(card)
+  def reject_card_by_index(index)
+    raise "No such card in deck" if index < 0 && index > cards.size
+    cards.delete(cards[index])
+  end
+
+  def give_cards(count)
+    raise 'Card count for giving less or equial zero' if count <= 0
+    raise "Card count for giving is so much then deck size" if cards.size < count
+
+    hand = []
+    cards_index = (0..count - 1)
+    cards_index.each do |index|
+      hand << @cards[index]
+      reject_card_by_index(index)
+    end
+    hand
+  end
+
+  def reject_card_by_params(suit, face_value)
+    raise "No such card in deck" unless find(suit, face_value)
+    card = find(suit, face_value)
     cards.delete(card)
   end
+
+  def find(suit, face_value)
+    index = cards.index { |card| card.suit == suit && card.face_value == face_value }
+    return if index.nil?
+    cards[index]
+  end
+
 end
