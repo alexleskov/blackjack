@@ -25,6 +25,26 @@ class User
     @score = value
   end
 
+  def hand_full?
+    return if hand.size == MAX_CARDS_COUNT
+    true
+  end
+
+  def cards_score_in_hand
+    cards_score = 0
+    hand.each do |card|
+      card_value = if card.face_value == 'A' && cards_score > 10
+                     card.value[1]
+                   elsif card.face_value == 'A'
+                     card.value[0]
+                   else
+                     card.value
+                   end
+      cards_score += card_value
+    end
+    cards_score
+  end
+
   def skip_an_action
     return false unless skip_count.zero?
 

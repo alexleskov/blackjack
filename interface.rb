@@ -35,16 +35,16 @@ class Interface
     end
   end
 
-  def balance_info(user)
-    print "| #{user.name}'s balance is #{user.balance}$ "
+  def balance_info(bank, user)
+    print "| #{user.name}'s balance is #{bank.balance(user)}$ "
     print '|'
   end
 
   def show_hand(user, option)
     print "\n#{user.name} cards: |"
-    user.cards_in_hand.each do |card|
+    user.hand.each do |card|
       if user.instance_of?(User) || option == :all_users
-        print "#{card}|"
+        print "#{card.face_value}#{card.suit}|"
       else
         print '*|'
       end
@@ -150,8 +150,10 @@ class Interface
     puts "----------------------------------\n"
   end
 
-  def score_raitings_table(user, score_array)
-    puts " #{score_array.index(user) + 1} | #{user.name.upcase} : #{user.balance}$"
+  def score_raitings_table(score_array)
+    score_array.each do |user_data|
+      puts " #{score_array.index(user_data) + 1} | #{user_data[0].name.upcase} : #{user_data[1]}$"
+    end
   end
 
   def empty_list
@@ -163,4 +165,13 @@ class Interface
   def show_error(error)
     puts error.inspect
   end
+
+  def skip_action_error
+    "Already skiped action"
+  end
+
+  def taking_card_error
+    "Already have full hand"
+  end
+
 end

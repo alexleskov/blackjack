@@ -61,9 +61,9 @@ class Game
   def show_score_raitings
     return @interface.empty_list if @score_raitings.empty?
 
-    score_table = @score_raitings.sort_by { |user| -user.balance }
+    score_table = @score_raitings.sort_by { |user_data| -user_data[1] }
     @interface.score_raitings
-    score_table.each { |user| @interface.score_raitings_table(user, score_table) }
+    @interface.score_raitings_table(score_table)
   end
 
   def start_a_round
@@ -83,80 +83,49 @@ class Game
     retry
   end
 
-  def do_action_with_users(block)
-    users.each { |user| block.call(user) }
-  end
-
   def show_users_balance
-    do_action_with_users ->(user) { @interface.balance_info(user) }
+    users.each { |user| @interface.balance_info(@bank, user) }
   end
 
   def take_a_bet_from_users
-    do_action_with_users ->(user) { @bank.reserve_money(user, A_BET) }
+    users.each { |user| @bank.reserve_money(user, A_BET) }
   end
 
   def show_users_hand(option)
-    do_action_with_users ->(user) { @interface.show_hand(user, option) }
+    users.each { |user| @interface.show_hand(user, option) }
   end
 
   def change_users_score_by_cards
-    do_action_with_users ->(user) { user.change_score(cards_score_in_hand(user)) }
+    users.each { |user| user.change_score(user.cards_score_in_hand) }
   end
 
   def create_users_account_in_bank
-    do_action_with_users ->(user) { @bank.create_account(user) }
+    users.each { |user| @bank.create_account(user) }
   end
 
   def give_users_cards
-    do_action_with_users ->(user) { give_a_cards(user, CARDS_COUNT_ON_START) }
+    users.each { |user| user.take_a_cards(@deck, CARDS_COUNT_ON_START) }
   end
 
   def reset_users_attribute
-    do_action_with_users ->(user) { user.reset_attributes }
-  end
-
-  def give_a_cards(user, count)
-    if user.hand.size > MAX_CARDS_COUNT
-      raise "User already have got #{MAX_CARDS_COUNT} cards"
-    end
-
-    cards = @deck.random_card(count)
-
-    if cards.size > MAX_CARDS_COUNT - user.hand.size
-      raise 'So much cards are trying to give user'
-    end
-
-    user.take_in_hand(cards)
-  end
-
-  def cards_score_in_hand(user)
-    cards_score = 0
-    user.hand.each do |card|
-      card_value = if card.chop == 'A' && cards_score > 10
-                     @deck.card_value(card)[1]
-                   elsif card.chop == 'A'
-                     @deck.card_value(card)[0]
-                   else
-                     @deck.card_value(card)
-                   end
-      cards_score += card_value
-    end
-    cards_score
+    users.each { |user| user.reset_attributes }
   end
 
   def player_actions_menu(input)
     case input
     when 1
-      give_one_more_card(player)
+      raise @interface.taking_card_error if player.take_a_cards(@deck, 1) == false
+      player.take_a_cards(@deck, 1)
       @interface.show_hand(player, :only_player)
-      player.change_score(cards_score_in_hand(player))
+      player.change_score(player.cards_score_in_hand)
       @interface.devider(:light)
       @interface.show_user_score_by_cards(player)
       next_step_dealer
     when 2
-      skip_an_action(player)
+      raise @interface.skip_action_error if player.skip_an_action == false
+      player.skip_an_action
       @interface.dealer_actions
-      dealer_actions
+      next_step_dealer
     when 3
       show_all_cards
     else
@@ -173,10 +142,6 @@ class Game
     retry
   end
 
-  def give_one_more_card(user)
-    give_a_cards(user, 1)
-  end
-
   def skip_an_action(user)
     raise "#{user.name} already skiped action" unless user.skip_count.zero?
 
@@ -186,7 +151,7 @@ class Game
   def show_all_cards
     show_users_hand(:all_users)
     @interface.devider(:strong)
-    do_action_with_users ->(user) { @interface.show_user_score_by_cards(user) }
+    users.each { |user| @interface.show_user_score_by_cards(user) }
     define_the_winner
   end
 
@@ -198,7 +163,7 @@ class Game
   end
 
   def auto_show_card?
-    dealer.hand.size == MAX_CARDS_COUNT && player.hand.size == MAX_CARDS_COUNT
+    dealer.hand_full? && player.hand_full?
   end
 
   def next_step_player
@@ -220,33 +185,29 @@ class Game
   end
 
   def dealer_actions
-    dealer_score = dealer.score
-    if dealer_score >= DEALER_SCORE_SETTING && dealer.skip_count.zero?
-      skip_an_action(dealer)
+    if dealer.skip_an_action
+      dealer.skip_an_action
       @interface.dealer_skiped_action
-      show_game_status
-      ask_player_for_actions
-    elsif dealer_score < DEALER_SCORE_SETTING && dealer.hand.size != MAX_CARDS_COUNT
-      give_one_more_card(dealer)
-      dealer.change_score(cards_score_in_hand(dealer))
+    elsif dealer.take_a_cards(@deck, 1)
+      dealer.take_a_cards(@deck, 1)
       @interface.dealer_taked_card
-      next_step_player
-    else
-      show_all_cards
+    elsif show_cards
+      show_cards
     end
+    next_step_player
   end
 
   def define_the_winner
     @interface.round_end_screen
     winner = nil
-    if player_is_winner?(player, dealer)
+    if player_is_winner?
       winner = player
-    elsif dealer_is_winner?(player, dealer)
+    elsif dealer_is_winner?
       winner = dealer
-    elsif draw?(player, dealer)
-      do_action_with_users(lambda do |user|
-        @bank.unreserve_money(user, @bank.transactions(user).last.abs)
-      end)
+    elsif draw
+      users.each do |user|
+        @bank.unreserve_money(user, @bank.transactions[user].last.abs)
+      end
       @interface.declare_the_dead_heat
       show_users_balance
     end
@@ -257,15 +218,15 @@ class Game
     end
   end
 
-  def player_is_winner?(player, dealer)
+  def player_is_winner?
     player.score <= SCORE_FOR_WIN && (dealer.score > SCORE_FOR_WIN || player.score > dealer.score)
   end
 
-  def dealer_is_winner?(player, dealer)
+  def dealer_is_winner?
     dealer.score <= SCORE_FOR_WIN && (player.score > SCORE_FOR_WIN || dealer.score > player.score)
   end
 
-  def draw?(player, dealer)
+  def draw?
     player.score == dealer.score || (player.score > SCORE_FOR_WIN && dealer.score > SCORE_FOR_WIN)
   end
 
@@ -286,7 +247,7 @@ class Game
   end
 
   def users_balance_zero?
-    @users.first.balance.zero? || @users.last.balance.zero?
+    @bank.balance(player).zero? || @bank.balance(dealer).zero?
   end
 
   def ask_next_round
@@ -295,7 +256,7 @@ class Game
       @interface.starting_new_round
       start_a_round
     else
-      @score_raitings << player
+      @score_raitings << [player, @bank.balance(player)]
       @interface.game_over
     end
   end

@@ -5,12 +5,6 @@ class Dealer < User
 
   DEALER_SCORE_SETTING = 17
 
-  class << self
-    attr_reader :all
-  end
-
-  @all = {}
-
   validate :name, :type, String
 
   def initialize
