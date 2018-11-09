@@ -107,6 +107,10 @@ class Interface
     puts 'Now is DEALER turn'
   end
 
+  def show_all_cards
+    puts "\n*SHOWING ALL CARDS"
+  end
+
   def round_end_screen
     puts "\n\u2663 \u2666 \u2665 \u2660  THE ROUND IS OVER \u2663 \u2666 \u2665 \u2660"
     puts "----------------------------------\n"
@@ -173,5 +177,4 @@ class Interface
   def taking_card_error
     "Already have full hand"
   end
-
 end

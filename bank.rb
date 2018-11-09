@@ -25,9 +25,7 @@ class Bank
     raise 'Value must be more then 0' if value <= 0
 
     balance = accounts[owner]
-    if balance.zero? || balance < value
-      raise "Owner has no so much money, only #{balance}$"
-    end
+    raise "Owner has no so much money, only #{balance}$" if balance.zero? || balance < value
 
     accounts[owner] -= value
     transactions[owner] += [-value]

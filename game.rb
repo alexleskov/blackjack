@@ -25,7 +25,7 @@ class Game
     retry
   end
 
-  #private
+  private
 
   def choice
     @interface.ask_choice
@@ -108,25 +108,31 @@ class Game
   end
 
   def reset_users_attribute
-    users.each { |user| user.reset_attributes }
+    users.each(&:reset_attributes)
   end
 
   def player_actions_menu(input)
     case input
+    when 0
+      nil
     when 1
-      raise @interface.taking_card_error if player.take_a_cards(@deck, 1) == false
+      raise @interface.taking_card_error unless player.can_take_cards?
+
       player.take_a_cards(@deck, 1)
       @interface.show_hand(player, :only_player)
       player.change_score(player.cards_score_in_hand)
       @interface.devider(:light)
       @interface.show_user_score_by_cards(player)
+      @interface.player_taked_card
       next_step_dealer
     when 2
-      raise @interface.skip_action_error if player.skip_an_action == false
+      raise @interface.skip_action_error unless player.skip_an_action?
+
       player.skip_an_action
-      @interface.dealer_actions
+      @interface.player_skiped_action
       next_step_dealer
     when 3
+      @interface.show_all_cards
       show_all_cards
     else
       raise @interface.incorrect_choice
@@ -163,7 +169,7 @@ class Game
   end
 
   def auto_show_card?
-    dealer.hand_full? && player.hand_full?
+    return false unless dealer.can_take_cards? && player.can_take_cards?
   end
 
   def next_step_player
@@ -185,16 +191,18 @@ class Game
   end
 
   def dealer_actions
-    if dealer.skip_an_action
+    if dealer.skip_an_action?
       dealer.skip_an_action
       @interface.dealer_skiped_action
-    elsif dealer.take_a_cards(@deck, 1)
+      next_step_player
+    elsif dealer.can_take_cards?
       dealer.take_a_cards(@deck, 1)
       @interface.dealer_taked_card
-    elsif show_cards
-      show_cards
+      next_step_player
+    else
+      @interface.show_all_cards
+      show_all_cards
     end
-    next_step_player
   end
 
   def define_the_winner
@@ -204,14 +212,14 @@ class Game
       winner = player
     elsif dealer_is_winner?
       winner = dealer
-    elsif draw
+    elsif draw?
       users.each do |user|
         @bank.unreserve_money(user, @bank.transactions[user].last.abs)
       end
       @interface.declare_the_dead_heat
       show_users_balance
     end
-    unless winner.nil?
+    if winner
       @bank.unreserve_money(winner, @bank.reserve)
       @interface.declare_the_victory_by(winner)
       show_users_balance

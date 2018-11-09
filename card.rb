@@ -9,19 +9,19 @@ class Card
 
   def self.face_values
     CARD_VALUES
-  end                  
+  end
 
   attr_reader :suit, :face_value, :value
-  
+
   def initialize(suit_name, face_value)
     suit_name = suit_name.to_sym
     @face_value = face_value.to_s
 
-    unless CARD_SUITS.has_key?(suit_name) && CARD_VALUES.has_key?(face_value)
+    unless CARD_SUITS.key?(suit_name) && CARD_VALUES.key?(face_value)
       raise "Can't creat card with params: #{suit_name}, #{face_value}"
     end
+
     @suit = CARD_SUITS[suit_name]
     @value = CARD_VALUES[face_value]
   end
-
 end
