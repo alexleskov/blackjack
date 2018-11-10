@@ -1,64 +1,26 @@
 class User
   MAX_CARDS_COUNT = 3
 
-  attr_reader :name, :hand, :score, :skip_count
-  alias show_cards hand
+  attr_reader :name, :hand
 
   def initialize(name)
     @name = name
-    @hand = []
-    @score = 0
-    @skip_count = 0
-  end
-
-  def change_score(value)
-    raise 'Value less or equial zero' if value <= 0
-
-    @score = value
-  end
-
-  def cards_score_in_hand
-    cards_score = 0
-    hand.each do |card|
-      card_value = if card.face_value == 'A' && cards_score > 10
-                     card.value[1]
-                   elsif card.face_value == 'A'
-                     card.value[0]
-                   else
-                     card.value
-                   end
-      cards_score += card_value
-    end
-    cards_score
-  end
-
-  def skip_an_action
-    return unless skip_count.zero?
-
-    @skip_count += 1
-  end
-
-  def take_a_cards(deck, count)
-    cards = deck.give_cards(count)
-
-    return if hand.size > MAX_CARDS_COUNT || cards.size > MAX_CARDS_COUNT - hand.size
-
-    @hand += cards
+    @hand = Hand.new(self)
   end
 
   def reset_attributes
-    @skip_count = 0
-    @score = 0
-    @hand = []
+    @hand = Hand.new(self)
   end
 
-  def skip_an_action?
-    !!skip_an_action
+  def skip_an_action
+    @hand.skip_an_action
+  end
+
+  def take_a_cards(deck, count)
+    @hand.take_a_cards(deck, count)
   end
 
   def can_take_cards?
-    return if hand.size == MAX_CARDS_COUNT
-
-    true
+    @hand.can_take_cards?
   end
 end

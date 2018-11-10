@@ -96,7 +96,7 @@ class Game
   end
 
   def change_users_score_by_cards
-    users.each { |user| user.change_score(user.cards_score_in_hand) }
+    users.each { |user| user.hand.change_score(user.hand.cards_score_in_hand) }
   end
 
   def create_users_account_in_bank
@@ -120,13 +120,13 @@ class Game
 
       player.take_a_cards(@deck, 1)
       @interface.show_hand(player, :only_player)
-      player.change_score(player.cards_score_in_hand)
+      player.hand.change_score(player.hand.cards_score_in_hand)
       @interface.devider(:light)
       @interface.show_user_score_by_cards(player)
       @interface.player_taked_card
       next_step_dealer
     when 2
-      raise @interface.skip_action_error unless player.skip_an_action?
+      raise @interface.skip_action_error unless player.hand.skip_an_action?
 
       player.skip_an_action
       @interface.player_skiped_action
@@ -149,7 +149,7 @@ class Game
   end
 
   def skip_an_action(user)
-    raise "#{user.name} already skiped action" unless user.skip_count.zero?
+    raise "#{user.name} already skiped action" unless user.hand.skip_count.zero?
 
     user.up_skip_count
   end
@@ -191,13 +191,13 @@ class Game
   end
 
   def dealer_actions
-    if dealer.skip_an_action?
+    if dealer.can_take_cards?
+      dealer.hand.take_a_cards(@deck, 1)
+      @interface.dealer_taked_card
+      next_step_player
+    elsif dealer.hand.skip_an_action?
       dealer.skip_an_action
       @interface.dealer_skiped_action
-      next_step_player
-    elsif dealer.can_take_cards?
-      dealer.take_a_cards(@deck, 1)
-      @interface.dealer_taked_card
       next_step_player
     else
       @interface.show_all_cards
@@ -227,15 +227,19 @@ class Game
   end
 
   def player_is_winner?
-    player.score <= SCORE_FOR_WIN && (dealer.score > SCORE_FOR_WIN || player.score > dealer.score)
+    !score_get_over?(player) && (score_get_over?(dealer) || player.hand.score > dealer.hand.score)
   end
 
   def dealer_is_winner?
-    dealer.score <= SCORE_FOR_WIN && (player.score > SCORE_FOR_WIN || dealer.score > player.score)
+    !score_get_over?(dealer) && (score_get_over?(player) || dealer.hand.score > player.hand.score)
   end
 
   def draw?
-    player.score == dealer.score || (player.score > SCORE_FOR_WIN && dealer.score > SCORE_FOR_WIN)
+    player.hand.score == dealer.hand.score || (score_get_over?(player) && score_get_over?(dealer))
+  end
+
+  def score_get_over?(user)
+    user.hand.score > SCORE_FOR_WIN
   end
 
   def next_round?

@@ -42,7 +42,7 @@ class Interface
 
   def show_hand(user, option)
     print "\n#{user.name} cards: |"
-    user.hand.each do |card|
+    user.hand.cards.each do |card|
       if user.instance_of?(User) || option == :all_users
         print "#{card.face_value}#{card.suit}|"
       else
@@ -72,7 +72,7 @@ class Interface
   end
 
   def show_user_score_by_cards(user)
-    puts "#{user.name} your score by cards is: #{user.score}\n"
+    puts "#{user.name} your score by cards is: #{user.hand.score}\n"
   end
 
   def player_actions_menu

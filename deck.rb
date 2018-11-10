@@ -7,8 +7,8 @@ class Deck
 
   def initialize_cards
     cards = []
-    Card.suits.each do |suit_name, _mark|
-      Card.face_values.each do |face_value, _value|
+    Card::SUITS.each do |suit_name, _mark|
+      Card::VALUES.each do |face_value, _value|
         cards << Card.new(suit_name, face_value)
       end
     end
