@@ -1,5 +1,8 @@
 class Hand
   MAX_CARDS_COUNT = 3
+  SCORE_FOR_WIN = 21
+  CROSS_VALUE = 10
+  ACE_COUNT_SETTING = 2
 
   attr_reader :cards, :score, :skip_count
 
@@ -23,15 +26,26 @@ class Hand
 
   def cards_score_in_hand
     cards_score = 0
+    x_cards = []
+
     cards.each do |card|
-      card_value = if card.face_value == 'A' && (cards_score > 10 || @score > 10)
-                     card.value[1]
-                   elsif card.face_value == 'A'
-                     card.value[0]
-                   else
-                     card.value
-                   end
-      cards_score += card_value
+      if card.face_value == 'A'
+        x_cards << card.value
+      else
+        cards_score += card.value
+      end
+    end
+
+    unless x_cards.empty?
+      x_cards_count = x_cards.size
+      x_cards.each do |x_card_value|
+        if cards_score <= CROSS_VALUE && x_cards_count < ACE_COUNT_SETTING
+          cards_score += x_card_value[0]
+        else
+          cards_score += x_card_value[1]
+          x_cards_count -= 1
+        end
+      end
     end
     cards_score
   end

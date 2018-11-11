@@ -1,6 +1,4 @@
 class User
-  MAX_CARDS_COUNT = 3
-
   attr_reader :name, :hand
 
   def initialize(name)

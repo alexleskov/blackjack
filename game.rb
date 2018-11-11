@@ -1,7 +1,6 @@
 class Game
   A_BET = 10
   CARDS_COUNT_ON_START = 2
-  SCORE_FOR_WIN = 21
 
   attr_reader :users, :bank
 
@@ -239,7 +238,7 @@ class Game
   end
 
   def score_get_over?(user)
-    user.hand.score > SCORE_FOR_WIN
+    user.hand.score > Hand::SCORE_FOR_WIN
   end
 
   def next_round?
